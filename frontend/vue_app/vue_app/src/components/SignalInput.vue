@@ -1,16 +1,24 @@
 <template>
   <div class="signal-input">
     <h2>Signal Processor</h2>
-    <textarea v-model="signalData" placeholder="Enter your signal data (comma-separated)"></textarea>
+    <textarea v-model="signalData" placeholder="Enter your signal data here (comma-separated)"></textarea>
+    <br />
     <button @click="saveSignal">Save Signal</button>
     <button @click="loadSignal">Load Signal</button>
     <button @click="calculateFFT">Calculate FFT</button>
+    <br />
+    <label for="savedSignals">Choose a saved signal:</label>
+    <select v-model="selectedSignal" @change="loadSelectedSignal" id="savedSignals">
+      <option v-for="(file, index) in savedSignals" :key="index" :value="file">{{ file }}</option>
+    </select>
+    <br />
     <div v-if="fftResult">
       <h3>FFT Result:</h3>
       <FFTChart :fftData="fftResult" />
     </div>
   </div>
 </template>
+
 
 <script>
 import FFTChart from './FFTChart.vue';
@@ -22,10 +30,65 @@ export default {
   data() {
     return {
       signalData: "",
+      savedSignals: [],  // Lista de señales guardadas
+      selectedSignal: "", // Señal seleccionada del dropdown
       fftResult: null
     };
   },
   methods: {
+    async saveSignal() {
+      if (this.signalData) {
+        const data = this.signalData.split(",").map(Number);
+        const fileName = `signal_${new Date().toISOString().replace(/:/g, "-")}.csv`;
+
+        // Guardar datos en formato CSV
+        const csvContent = data.join(",");
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+
+        // Agregar el archivo a la lista de señales guardadas
+        this.savedSignals.push(fileName);
+
+        // Mostrar mensaje de éxito con el nombre del archivo
+        alert(`Señal guardada exitosamente como: ${fileName}`);
+      } else {
+        alert("No hay datos de señal para guardar.");
+      }
+    },
+    async loadSignal() {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".csv";
+
+      input.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              // Leer los datos del CSV y actualizar el modelo signalData
+              this.signalData = e.target.result;
+              alert(`Señal cargada exitosamente desde: ${file.name}`);
+            } catch (error) {
+              alert("Error al cargar el archivo. Asegúrate de que sea un archivo CSV válido.");
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+
+      input.click();
+    },
+    loadSelectedSignal() {
+      // Método para cargar la señal seleccionada de la lista desplegable
+      if (this.selectedSignal) {
+        alert(`Cargando la señal: ${this.selectedSignal}`);
+        // Aquí podrías agregar la lógica para cargar la señal real si está disponible en almacenamiento
+      }
+    },
     async calculateFFT() {
       const data = this.signalData.split(",").map(Number);
       try {
@@ -42,82 +105,7 @@ export default {
         console.error("Error while calculating FFT:", error);
       }
     },
-
-    async saveSignal_old() {
-      if (this.signalData) {
-        const data = this.signalData.split(",").map(Number);
-        try {
-          await fetch("http://127.0.0.1:9090/save_signal", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
-          alert("Signal saved successfully!");
-        } catch (error) {
-          console.error("Error while saving the signal:", error);
-        }
-      } else {
-        alert("No signal data to save.");
-      }
-    },   
-    async saveSignal() {
-      if (this.signalData) {
-        const data = this.signalData.split(",").map(Number);
-        const fileName = `signal_${new Date().toISOString().replace(/:/g, "-")}.csv`;
-
-        // Convertir datos a formato CSV
-        const csvContent = data.join(",");
-        const blob = new Blob([csvContent], { type: "text/csv" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        link.click();
-
-        // Mostrar mensaje de éxito con el nombre del archivo
-        alert(`Señal guardada exitosamente como: ${fileName}`);
-      } else {
-        alert("No hay datos de señal para guardar.");
-      }
-    },    
-
-    async loadSignal_old() {
-      try {
-        const response = await fetch("http://127.0.0.1:9090/load_signal");
-        const result = await response.json();
-        this.signalData = result.signal_data.join(",");
-        alert("Signal loaded successfully!");
-      } catch (error) {
-        console.error("Error while loading the signal:", error);
-      }
-    },
-    async loadSignal() {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".csv";
-
-      input.onchange = async (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            try {
-              // Leer los datos del CSV y actualizar signalData
-              this.signalData = e.target.result;
-              alert(`Señal cargada exitosamente desde: ${file.name}`);
-            } catch (error) {
-              alert("Error al cargar el archivo. Asegúrate de que sea un archivo de señal válido en formato CSV.");
-            }
-          };
-          reader.readAsText(file);
-        }
-      };
-
-      input.click();
-    }
-
-  }
+  },
 };
 </script>
 
@@ -148,4 +136,3 @@ button:hover {
   background-color: #0056b3;
 }
 </style>
-
