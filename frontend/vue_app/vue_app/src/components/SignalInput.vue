@@ -16,23 +16,31 @@
       <h3>FFT Result:</h3>
       <FFTChart :fftData="fftResult" />
     </div>
+    <button @click="showSignalGenerator = !showSignalGenerator">
+      {{ showSignalGenerator ? 'Hide Signal Generator' : 'Show Signal Generator' }}
+    </button>
+    <SignalGenerator v-if="showSignalGenerator" />
+
   </div>
 </template>
 
 
 <script>
 import FFTChart from './FFTChart.vue';
+import SignalGenerator from './SignalGenerator.vue';
 
 export default {
   components: {
-    FFTChart
+    FFTChart,
+    SignalGenerator
   },
   data() {
     return {
       signalData: "",
       savedSignals: [],  // Lista de señales guardadas
       selectedSignal: "", // Señal seleccionada del dropdown
-      fftResult: null
+      fftResult: null,
+      showSignalGenerator: false      
     };
   },
   created() {
