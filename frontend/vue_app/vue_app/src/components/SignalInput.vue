@@ -35,6 +35,15 @@ export default {
       fftResult: null
     };
   },
+  created() {
+    // Cargar señales guardadas desde localStorage cuando se inicie el componente
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key.startsWith("signal_")) {
+        this.savedSignals.push(key);
+      }
+    }
+  },  
   methods: {
     async saveSignal() {
       if (this.signalData) {
@@ -51,6 +60,9 @@ export default {
 
         // Agregar el archivo a la lista de señales guardadas
         this.savedSignals.push(fileName);
+
+        // Guardar también la señal en localStorage
+        localStorage.setItem(fileName, this.signalData);
 
         // Mostrar mensaje de éxito con el nombre del archivo
         alert(`Señal guardada exitosamente como: ${fileName}`);
@@ -85,10 +97,16 @@ export default {
     loadSelectedSignal() {
       // Método para cargar la señal seleccionada de la lista desplegable
       if (this.selectedSignal) {
-        alert(`Cargando la señal: ${this.selectedSignal}`);
-        // Aquí podrías agregar la lógica para cargar la señal real si está disponible en almacenamiento
+        const savedData = localStorage.getItem(this.selectedSignal);
+        if (savedData) {
+          this.signalData = savedData;
+          alert(`Señal cargada exitosamente desde: ${this.selectedSignal}`);
+        } else {
+          alert("No se encontró la señal seleccionada en el almacenamiento.");
+        }
       }
     },
+
     async calculateFFT() {
       const data = this.signalData.split(",").map(Number);
       try {
