@@ -58,6 +58,7 @@
   </script>
   
   <style scoped>
+  /*
   .signal-generator {
     margin: 20px;
     padding: 20px;
@@ -83,5 +84,6 @@
   button:hover {
     background-color: #0056b3;
   }
+    */
   </style>
   

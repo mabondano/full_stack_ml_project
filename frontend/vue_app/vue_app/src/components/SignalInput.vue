@@ -136,6 +136,7 @@ export default {
 
 
 <style scoped>
+/*
 .signal-input {
   margin: 20px;
   padding: 20px;
@@ -143,6 +144,7 @@ export default {
   border-radius: 10px;
   background-color: #f9f9f9;
 }
+
 textarea {
   width: 100%;
   height: 100px;
@@ -160,4 +162,5 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+  */
 </style>
