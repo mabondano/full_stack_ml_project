@@ -24,7 +24,6 @@
   </div>
 </template>
 
-
 <script>
 import FFTChart from './FFTChart.vue';
 import SignalGenerator from './SignalGenerator.vue';
