@@ -1,11 +1,22 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import numpy as np
-
 import csv
 from typing import List
 import os
+
+import matplotlib
+matplotlib.use('Agg')
+
+import matplotlib.pyplot as plt
+import io
+import base64
+from fastapi.responses import JSONResponse
+from scipy import signal
+from numpy import arange, pi, sinc, log10
+
+
 
 app = FastAPI()
 
@@ -69,5 +80,66 @@ async def load_signal():
         return {"signal_data": signal_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading signal: {e}")
+    
+
+# Nueva funcionalidad: Calcular la FFT y generar una gráfica
+@app.get("/calculate_fft")
+async def calculate_fft_graph(
+    wc: float = Query(pi/4, description="Cut-off frequency in radians (default is pi/4)"),
+    M: int = Query(20, description="Filter length parameter (default is 20)")
+):
+    try:
+        # Calculation Parameters
+        N = 512  # DFT size
+        n = arange(-M, M)
+        h = wc / pi * sinc(wc * (n) / pi)  # Filter coefficients
+
+        # Frequency Response
+        w, Hh = signal.freqz(h, 1, whole=True, worN=N)
+        
+        # Plotting the results
+        fig, axs = plt.subplots(3, 1)
+        fig.set_size_inches((8, 8))
+        plt.subplots_adjust(hspace=0.3)
+        
+        # Plotting the filter coefficients
+        ax = axs[0]
+        ax.stem(n + M, h, basefmt='b-')
+        ax.set_xlabel("$n$", fontsize=22)
+        ax.set_ylabel("$h_n$", fontsize=22)
+
+        # Plotting the magnitude response
+        ax = axs[1]
+        ax.plot(w - pi, abs(np.fft.fftshift(Hh)))
+        ax.axis(xmax=pi / 2, xmin=-pi / 2)
+        ax.vlines([-wc, wc], 0, 1.2, color='g', lw=2., linestyle='--')
+        ax.hlines(1, -pi, pi, color='g', lw=2., linestyle='--')
+        ax.set_xlabel(r"$\omega$", fontsize=22)
+        ax.set_ylabel(r"$|H(\omega)| $", fontsize=22)
+
+        # Plotting the log-magnitude response
+        ax = axs[2]
+        ax.plot(w - pi, 20 * log10(abs(np.fft.fftshift(Hh))))
+        ax.axis(ymin=-40, xmax=pi / 2, xmin=-pi / 2)
+        ax.vlines([-wc, wc], 10, -40, color='g', lw=2., linestyle='--')
+        ax.hlines(0, -pi, pi, color='g', lw=2., linestyle='--')
+        ax.set_xlabel(r"$\omega$", fontsize=22)
+        ax.set_ylabel(r"$20\log_{10}|H(\omega)| $", fontsize=18)
+
+        # Save plot to a bytes buffer
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        plt.close(fig)
+        
+        # Encode the plot as base64
+        image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+        
+        # Return as JSON
+        return JSONResponse(content={"image": image_base64})
+
+    except Exception as e:
+        return {"error": str(e)}
+
 
 
