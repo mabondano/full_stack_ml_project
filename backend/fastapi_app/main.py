@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.staticfiles import StaticFiles         #FastAPI configuracion para servir archivos estáticos     
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import numpy as np
@@ -17,8 +18,11 @@ from scipy import signal
 from numpy import arange, pi, sinc, log10
 
 
-
 app = FastAPI()
+
+# Montar la carpeta 'static' para servir archivos estáticos
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 # Configurar CORS para permitir solicitudes desde el frontend
 app.add_middleware(
